@@ -17,7 +17,9 @@ def word_to_pdf(docx_path, pdf_path):
     pdf.add_page()
     pdf.set_font("Arial", size=12)
     for para in doc.paragraphs:
-        pdf.multi_cell(0, 10, txt=para.text.encode('latin-1', 'replace').decode('latin-1'))
+        # Esto limpia caracteres raros para evitar errores de codificación
+        texto = para.text.encode('latin-1', 'replace').decode('latin-1')
+        pdf.multi_cell(0, 10, txt=texto)
     pdf.output(pdf_path)
 
 @app.route('/webhook', methods=['POST'])
@@ -31,26 +33,28 @@ def chatbot():
         pdf_filename = "convertido.pdf"
         pdf_path = os.path.join(UPLOAD_FOLDER, pdf_filename)
         
-        r = requests.get(media_url)
-        with open(input_path, 'wb') as f:
-            f.write(r.content)
-
         try:
+            # Descargar archivo
+            r = requests.get(media_url)
+            with open(input_path, 'wb') as f:
+                f.write(r.content)
+
+            # Convertir
             if 'officedocument.wordprocessingml.document' in mime_type:
                 word_to_pdf(input_path, pdf_path)
             elif 'image/' in mime_type:
                 img = Image.open(input_path).convert('RGB')
                 img.save(pdf_path, "PDF")
-            else:
-                resp.message("⚠️ Envía un .docx o una imagen.")
-                return str(resp)
-
+            
+            # Crear link público
             link = f"{request.host_url}download/{pdf_filename}"
-            resp.message(f"✅ ¡Listo! Descarga aquí:\n{link}")
+            resp.message(f"✅ ¡Conversión exitosa!\nDescarga tu PDF aquí: {link}")
+            
         except Exception as e:
-            resp.message(f"❌ Error: {str(e)}")
+            resp.message(f"❌ Error interno: {str(e)}")
     else:
-        resp.message("¡Hola! Envíame un Word o imagen.")
+        resp.message("¡Hola! Envíame un archivo Word o una Imagen para convertirlo.")
+    
     return str(resp)
 
 @app.route('/download/<filename>')
