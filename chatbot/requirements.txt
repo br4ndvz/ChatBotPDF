@@ -1,0 +1,6 @@
+flask
+twilio
+aspose-words
+pillow
+requests
+gunicorn
