@@ -1,7 +1,4 @@
-flask
-twilio
-python-docx
-fpdf
-pillow
+Flask
 requests
+cloudconvert
 gunicorn
